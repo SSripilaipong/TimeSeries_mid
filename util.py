@@ -156,7 +156,7 @@ def to_timeseries(img, n_scale=2000, reshape=lambda t: t.reshape(-1)):
             break
 
     # before skeletionization
-    preFFT = t(res)
+    preFFT = reshape(res)
 
     # Number of samplepoints
     N = preFFT.size // n_scale
