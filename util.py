@@ -1,5 +1,6 @@
-from os import listdir
-from os import path
+from os import listdir, path, errno, makedirs
+from shutil import copyfile
+
 import re
 from PIL import Image, ImageStat
 
@@ -54,6 +55,24 @@ def get_load_data_func(data_root='data/'):
         return r
 
     return wrapper
+
+
+def group_file_by_class(data_root='data/'):
+    df = pd.DataFrame(
+        list(map(lambda t: (t[0].format('png'), t[2]['class']), util.data_gen(data_root))),
+        columns='file_path cls'.split()
+    )
+
+    for c in df.cls.unique():
+        d = 'cls_group/cls_{}'.format(c)
+        try:
+            makedirs(d)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+        files = df[df.cls == c].file_path
+        for f in files:
+            copyfile(f, path.join(d, f.split('/')[-1]))
 
 
 def normalize(img, M0=250, VAR0=100):
@@ -123,4 +142,3 @@ def to_timeseries(img, n_scale=2000):
     yf = scipy.fftpack.fft(y)
     xf = np.linspace(0.0, 1.0 / (2.0 * T), N / 2)
     return xf[1:], (2.0 / N * np.abs(yf[:N // 2]))[1:]
-
