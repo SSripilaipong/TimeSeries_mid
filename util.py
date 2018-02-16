@@ -40,8 +40,33 @@ def data_gen(data_root='data/'):
             yield name_path, cv.imread(img_path, 0), cls
 
 
-def get_load_data_func(data_root='data/'):
+def get_load_data_func(ata_root='data/'):
     gen = data_gen(data_root)
+
+    def wrapper(n):
+        r = []
+
+        for i in range(n):
+            try:
+                r.append(next(gen))
+            except StopIteration:
+                return r
+
+        return r
+
+    return wrapper
+
+
+def gen_by_class(cls, cls_group='cls_group'):
+    file_path = path.join(cls_group, 'cls_{}'.format(cls))
+    for f in listdir(file_path):
+        f = path.join(file_path, f)
+
+        yield cv.imread(f, 0)
+
+
+def get_load_data_by_class_func(cls, data_root='cls_group'):
+    gen = gen_by_class(cls, data_root)
 
     def wrapper(n):
         r = []
@@ -104,7 +129,7 @@ def process(img, filters):
     return accum
 
 
-def to_timeseries(img, n_scale=2000):
+def to_timeseries(img, n_scale=2000, reshape=lambda t: t.reshape(-1)):
     filters = build_filters()
     res = process(normalize(img), filters)
     mean = np.mean(res) * 1.2
@@ -131,7 +156,7 @@ def to_timeseries(img, n_scale=2000):
             break
 
     # before skeletionization
-    preFFT = res.reshape(-1)
+    preFFT = t(res)
 
     # Number of samplepoints
     N = preFFT.size // n_scale
